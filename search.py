@@ -1,4 +1,5 @@
 from ast import Index
+import copy
 
 
 def main():
@@ -6,7 +7,6 @@ def main():
     start = gen_puzzle(p_mode)
     goal = [[1, 2, 3], [4, 5, 6], [7, 8, 0]]
     algorithm = select_algorithm(goal)
-
     search(start, goal, algorithm)
 
 
@@ -16,13 +16,12 @@ def search(start, goal, algorithm):
     depth = 1
     max_nodes_in_queue = 1
     while len(nodes) > 0:
-        curr = nodes.pop()
-        h_n = algorithm(curr[0])
-
-        print("Expanding state with lowest f(n) = %s, g(n) = %s, h(n) = %s \n" % (h_n + curr[1], curr[1], h_n))
-
+        curr = nodes.pop(0)
+        f_n = algorithm(curr)
+        print("Expanding state with lowest f(n) = %s, g(n) = %s, h(n) = %s \n" % (f_n, curr[1], f_n - curr[1]))
         display_puzzle(curr[0])
         if curr[0] == goal:
+            print("Goal State found!")
             return nodes
         else:
             num_nodes_expanded += 1
@@ -30,10 +29,8 @@ def search(start, goal, algorithm):
             for i in range(0, 4):
                 ## Find all possible child states 0 = Move Blank Up, 1 = Move Blank Down, 2 = Move Blank Left, 3 = Move Blank Right
                 child_node = get_child(curr[0], i)
-                display_puzzle(child_node)
                 ## Append to queue, ensuring that the g(n) is updated for each node given the previous node.
                 if child_node != None:
-
                     nodes.append((child_node, curr[1] + 1))
             ## Sort Queue based on our Heuristic
             nodes = sorted(nodes, key=algorithm)
@@ -45,7 +42,7 @@ def get_child(state, dir):
     for i in range(0, len(state)):
         for j in range(0, len(state)):
             if state[i][j] == 0:
-                child = state.copy()
+                child = copy.deepcopy(state)
                 if dir == 0:  ## Move Blank Up
                     try:
                         temp_val = child[i - 1][j]
@@ -92,7 +89,7 @@ def gen_puzzle(p_mode="N"):
         for i in range(0, 9):
             puzzle[int(i / 3)][i % 3] = int(input("%s\n%s\n%s\nNumber? " % (puzzle[0], puzzle[1], puzzle[2])))
     else:
-        p_difficulty = input("Please enter your desired default puzzle difficulty level! \n 0 - Trivial \n 1 - Easy \n 2 - Medium \n 3 - Hard \n 4 - Impossible \n")
+        p_difficulty = int(input("Please enter your desired default puzzle difficulty level! \n 0 - Trivial \n 1 - Easy \n 2 - Medium \n 3 - Hard \n 4 - Impossible \n"))
 
         if p_difficulty == 0:
             puzzle = [[1, 2, 3], [4, 5, 6], [7, 8, 0]]
@@ -111,19 +108,13 @@ def gen_puzzle(p_mode="N"):
 
 ## Helper function for selecting algorithm
 def select_algorithm(goal):
-    algo = input("Select a search heuristic: 0 - Uniform Cost \n 1 - Misplaced Tile \n 2 - Manhattan Distance")
-    heuristic = lambda i: 0
+    algo = int(input("Select a search heuristic: 0 - Uniform Cost \n 1 - Misplaced Tile \n 2 - Manhattan Distance\n"))
     if algo == 0:
-        heuristic = lambda i: i[1]
+        return lambda i: i[1]
     elif algo == 1:
-        heuristic = lambda i: i[1] + get_misplaced_tiles(i[0], goal)
+        return lambda i: i[1] + get_misplaced_tiles(i[0], goal)
     elif algo == 2:
-        heuristic = lambda i: i[1] + get_manhattan(i[0], goal)
-    else:
-        print("Error: no algorithm chosen!")
-        heuristic = lambda i: i[1]
-
-    return heuristic
+        return lambda i: i[1] + get_manhattan(i[0], goal)
 
 
 ## Parameters: two matrices representing the current state and the goal state of the 8-puzzle matrix
