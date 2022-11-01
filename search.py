@@ -7,7 +7,7 @@ def main():
     start = gen_puzzle(p_mode)
     goal = [[1, 2, 3], [4, 5, 6], [7, 8, 0]]
     algorithm = select_algorithm(goal)
-    search(start, goal, algorithm)
+    nodes, depth, max_nodes_in_queue, num_nodes_expanded = search(start, goal, algorithm)
 
 
 def search(start, goal, algorithm):
@@ -16,18 +16,19 @@ def search(start, goal, algorithm):
     depth = 1
     max_nodes_in_queue = 1
     while len(nodes) > 0:
-        curr = nodes.pop(0)
-        f_n = algorithm(curr)
+        curr = nodes.pop(0)  ## Remove the smallest cost node from the queue
+        f_n = algorithm(curr)  ## Calculate cost for displaying
         print("Expanding state with lowest f(n) = %s, g(n) = %s, h(n) = %s \n" % (f_n, curr[1], f_n - curr[1]))
         display_puzzle(curr[0])
         if curr[0] == goal:
             print("Goal State found!")
-            return nodes
+            return nodes, depth, max_nodes_in_queue, num_nodes_expanded
         else:
-            num_nodes_expanded += 1
-            depth += 1
+            num_nodes_expanded += 1  ## we expand our popped node
+            depth += 1  ## this increases the tree depth by 1.
             for i in range(0, 4):
-                ## Find all possible child states 0 = Move Blank Up, 1 = Move Blank Down, 2 = Move Blank Left, 3 = Move Blank Right
+                ## Find all valid child states for the following operators
+                #  0 = Move Blank Up, 1 = Move Blank Down, 2 = Move Blank Left, 3 = Move Blank Right
                 child_node = get_child(curr[0], i)
                 ## Append to queue, ensuring that the g(n) is updated for each node given the previous node.
                 if child_node != None:
