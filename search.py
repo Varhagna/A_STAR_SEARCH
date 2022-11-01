@@ -9,31 +9,52 @@ def main():
 
 def search(start, goal, algorithm):
     nodes = [(start, 0)]
-
+    max_num_nodes = 1
     while len(nodes) > 0:
-
-        if nodes.pop()[0] == goal:
-            display_puzzle(nodes[0][0])
+        curr = nodes.pop()
+        if curr[0] == goal:
+            display_puzzle(curr[0])
             return nodes
         else:
             for i in range(0, 4):
-                child_node = get_child(nodes[0][0], i)
-                nodes.append((child_node, nodes[0][1] + 1))
+                ## Find all possible child states 0 = Move Blank Up, 1 = Move Blank Down, 2 = Move Blank Left, 3 = Move Blank Right
+                child_node = get_child(curr[0], i)
+                display_puzzle(child_node)
+                ## Append to queue, ensuring that the g(n) is updated for each node given the previous node.
+                nodes.append((child_node, curr[1] + 1))
+            ## Sort Queue based on our Heuristic
             nodes = sorted(nodes, key=algorithm)
+            if max_num_nodes <= len(nodes):
+                max_num_nodes = len(nodes)
 
 
 def get_child(state, dir):
-    for i in len(state):
-        for j in len(state):
+    for i in range(0, len(state)):
+        for j in range(0, len(state)):
             if state[i][j] == 0:
+                child = state.copy()
                 if dir == 0:  ## Move Blank Up
-                    return state.copy()[i][j]
-                elif dir == 1:
-                    return
-                elif dir == 2:
-                    return
+                    temp_val = child[i - 1][j]
+                    child[i - 1][j] = child[i][j]
+                    child[i][j] = temp_val
+                    return child
+                elif dir == 1:  ## Move Blank Down
+                    temp_val = child[i + 1][j]
+                    child[i + 1][j] = child[i][j]
+                    child[i][j] = temp_val
+                    return child
+                elif dir == 2:  ## Move Blank Left
+                    temp_val = child[i][j - 1]
+                    child[i][j - 1] = child[i][j]
+                    child[i][j] = temp_val
+                    return child
                 elif dir == 3:
-                    return
+                    temp_val = child[i][j + 1]
+                    child[i][j + 1] = child[i][j]
+                    child[i][j] = temp_val
+                    return child
+                else:
+                    return child
 
 
 def gen_puzzle(p_mode="N"):
