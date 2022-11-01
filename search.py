@@ -33,8 +33,30 @@ def gen_puzzle(p_mode="N"):
             puzzle = [[5, 0, 2], [6, 1, 7], [4, 8, 3]]
 
 
-def solve_puzzle(puzzle):
-    input("Select a search heuristic: 0 - Uniform Cost \n 1 - Misplaced Tile \n 2 - Manhattan Distance")
+def select_algorithm(puzzle):
+    algo = input("Select a search heuristic: 0 - Uniform Cost \n 1 - Misplaced Tile \n 2 - Manhattan Distance")
+    heuristic = ""
+    if algo == 0:
+        heuristic = lambda i: i[1]
+    elif algo == 1:
+        heuristic = lambda i: i[1] + get_misplaced_tiles(i[0], puzzle)
+    elif algo == 2:
+        heuristic = lambda i: i[1] + get_manhattan(puzzle)
+    else:
+        return
+
+def get_manhattan(state, goal):
+
+def get_misplaced_tiles(state, goal):
+    count = 0
+    for i in range(0, 3):
+        for j in range(0, 3):
+            if state[i][j] != goal[i][j]:
+                count += 1
+
+    return count
+
+
 
 
 def display_puzzle(puzzle):
