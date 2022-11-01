@@ -1,3 +1,6 @@
+from ast import Index
+
+
 def main():
     p_mode = input("Welcome to my 8-Puzzle Solver! Would you like to solve your own puzzle? (Y / N) ")
     start = gen_puzzle(p_mode)
@@ -9,23 +12,33 @@ def main():
 
 def search(start, goal, algorithm):
     nodes = [(start, 0)]
-    max_num_nodes = 1
+    num_nodes_expanded = 0
+    depth = 1
+    max_nodes_in_queue = 1
     while len(nodes) > 0:
         curr = nodes.pop()
+        h_n = algorithm(curr[0])
+
+        print("Expanding state with lowest f(n) = %s, g(n) = %s, h(n) = %s \n" % (h_n + curr[1], curr[1], h_n))
+
+        display_puzzle(curr[0])
         if curr[0] == goal:
-            display_puzzle(curr[0])
             return nodes
         else:
+            num_nodes_expanded += 1
+            depth += 1
             for i in range(0, 4):
                 ## Find all possible child states 0 = Move Blank Up, 1 = Move Blank Down, 2 = Move Blank Left, 3 = Move Blank Right
                 child_node = get_child(curr[0], i)
                 display_puzzle(child_node)
                 ## Append to queue, ensuring that the g(n) is updated for each node given the previous node.
-                nodes.append((child_node, curr[1] + 1))
+                if child_node != None:
+
+                    nodes.append((child_node, curr[1] + 1))
             ## Sort Queue based on our Heuristic
             nodes = sorted(nodes, key=algorithm)
-            if max_num_nodes <= len(nodes):
-                max_num_nodes = len(nodes)
+            if max_nodes_in_queue <= len(nodes):
+                max_nodes_in_queue = len(nodes)
 
 
 def get_child(state, dir):
@@ -34,27 +47,39 @@ def get_child(state, dir):
             if state[i][j] == 0:
                 child = state.copy()
                 if dir == 0:  ## Move Blank Up
-                    temp_val = child[i - 1][j]
-                    child[i - 1][j] = child[i][j]
-                    child[i][j] = temp_val
-                    return child
+                    try:
+                        temp_val = child[i - 1][j]
+                        child[i - 1][j] = child[i][j]
+                        child[i][j] = temp_val
+                        return child
+                    except IndexError:
+                        return None
                 elif dir == 1:  ## Move Blank Down
-                    temp_val = child[i + 1][j]
-                    child[i + 1][j] = child[i][j]
-                    child[i][j] = temp_val
-                    return child
+                    try:
+                        temp_val = child[i + 1][j]
+                        child[i + 1][j] = child[i][j]
+                        child[i][j] = temp_val
+                        return child
+                    except IndexError:
+                        return None
                 elif dir == 2:  ## Move Blank Left
-                    temp_val = child[i][j - 1]
-                    child[i][j - 1] = child[i][j]
-                    child[i][j] = temp_val
-                    return child
+                    try:
+                        temp_val = child[i][j - 1]
+                        child[i][j - 1] = child[i][j]
+                        child[i][j] = temp_val
+                        return child
+                    except IndexError:
+                        return None
                 elif dir == 3:
-                    temp_val = child[i][j + 1]
-                    child[i][j + 1] = child[i][j]
-                    child[i][j] = temp_val
-                    return child
+                    try:
+                        temp_val = child[i][j + 1]
+                        child[i][j + 1] = child[i][j]
+                        child[i][j] = temp_val
+                        return child
+                    except IndexError:
+                        return None
                 else:
-                    return child
+                    return None
 
 
 def gen_puzzle(p_mode="N"):
