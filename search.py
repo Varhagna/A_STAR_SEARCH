@@ -1,13 +1,39 @@
-from logging import warn
-import queue
-from select import select
-
-
 def main():
     p_mode = input("Welcome to my 8-Puzzle Solver! Would you like to solve your own puzzle? (Y / N) ")
     start = gen_puzzle(p_mode)
     goal = [[1, 2, 3], [4, 5, 6], [7, 8, 0]]
     algorithm = select_algorithm(goal)
+
+    search(start, goal, algorithm)
+
+
+def search(start, goal, algorithm):
+    nodes = [(start, 0)]
+
+    while len(nodes) > 0:
+
+        if nodes.pop()[0] == goal:
+            display_puzzle(nodes[0][0])
+            return nodes
+        else:
+            for i in range(0, 4):
+                child_node = get_child(nodes[0][0], i)
+                nodes.append((child_node, nodes[0][1] + 1))
+            nodes = sorted(nodes, key=algorithm)
+
+
+def get_child(state, dir):
+    for i in len(state):
+        for j in len(state):
+            if state[i][j] == 0:
+                if dir == 0:  ## Move Blank Up
+                    return state.copy()[i][j]
+                elif dir == 1:
+                    return
+                elif dir == 2:
+                    return
+                elif dir == 3:
+                    return
 
 
 def gen_puzzle(p_mode="N"):
@@ -38,11 +64,9 @@ def gen_puzzle(p_mode="N"):
 
 
 ## Helper function for selecting algorithm
-
-
 def select_algorithm(goal):
     algo = input("Select a search heuristic: 0 - Uniform Cost \n 1 - Misplaced Tile \n 2 - Manhattan Distance")
-    heuristic = ""
+    heuristic = lambda i: 0
     if algo == 0:
         heuristic = lambda i: i[1]
     elif algo == 1:
@@ -50,7 +74,10 @@ def select_algorithm(goal):
     elif algo == 2:
         heuristic = lambda i: i[1] + get_manhattan(i[0], goal)
     else:
-        return
+        print("Error: no algorithm chosen!")
+        heuristic = lambda i: i[1]
+
+    return heuristic
 
 
 ## Parameters: two matrices representing the current state and the goal state of the 8-puzzle matrix
