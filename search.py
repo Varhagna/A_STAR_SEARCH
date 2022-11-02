@@ -1,85 +1,101 @@
 from ast import Index
 import copy
+import time
 
-
+## Driver function
+## Output: Prompts user for input on puzzle type, generates starting state, selects heuristic, then progresses search. Outputs information pertaining to memory and time spent in search
 def main():
     p_mode = input("Welcome to my 8-Puzzle Solver! Would you like to solve your own puzzle? (Y / N) ")
     start = gen_puzzle(p_mode)
     goal = [[1, 2, 3], [4, 5, 6], [7, 8, 0]]
-    algorithm = select_algorithm(goal)
-    nodes, depth, max_nodes_in_queue, num_nodes_expanded = search(start, goal, algorithm)
+    queuing_function = select_queuing_function(goal)
+    t1 = time.time_ns()
+    nodes, depth, max_nodes_in_queue, num_nodes_expanded = search(start, goal, queuing_function)
+    t2 = time.time_ns()
+
+    print("Queue Depth: %s" % (depth))
+    print("Max Queue Size (# Nodes): %s" % (max_nodes_in_queue))
+    print("# Nodes Expanded: %s" % (num_nodes_expanded))
+    print("Time elapsed: %4.3f s" % ((t2 - t1) / 10**9))
 
 
+## A* search function
+## Parameters: start - matrix representing our 8-puzzle start state
+##             goal - matrix representing our 8-puzzle goal state
+##             heuristic - a lambda function that describes a heuristic for sorting the node queue
+## Output: nodes - the node queue
+##         depth - the depth reached by the queue in the search tree
+##         num_nodes_expanded - the number of nodes expanded during search
+##         max_nodes_in_queue - the maximum number of nodes present in the queue
 def search(start, goal, algorithm):
     nodes = [(start, 0)]
+    path = []
     num_nodes_expanded = 0
-    depth = 1
     max_nodes_in_queue = 1
+
     while len(nodes) > 0:
         curr = nodes.pop(0)  ## Remove the smallest cost node from the queue
         f_n = algorithm(curr)  ## Calculate cost for displaying
         print("Expanding state with lowest f(n) = %s, g(n) = %s, h(n) = %s \n" % (f_n, curr[1], f_n - curr[1]))
         display_puzzle(curr[0])
-        if curr[0] == goal:
+
+        if curr[0] == goal:  ## If our popped node is our goal state, we've solved the puzzle!
             print("Goal State found!")
-            return nodes, depth, max_nodes_in_queue, num_nodes_expanded
+            return nodes, curr[1], max_nodes_in_queue, num_nodes_expanded  ## return search information to main function for output. Note: g_n = depth of the tree for any node)
         else:
-            num_nodes_expanded += 1  ## we expand our popped node
-            depth += 1  ## this increases the tree depth by 1.
+            num_nodes_expanded += 1  ## we expand our popped node, therefore increase number of expanded nodes by 1
             for i in range(0, 4):
                 ## Find all valid child states for the following operators
-                #  0 = Move Blank Up, 1 = Move Blank Down, 2 = Move Blank Left, 3 = Move Blank Right
+                ##  0 = Move Blank Up, 1 = Move Blank Down, 2 = Move Blank Left, 3 = Move Blank Right
                 child_node = get_child(curr[0], i)
                 ## Append to queue, ensuring that the g(n) is updated for each node given the previous node.
                 if child_node != None:
                     nodes.append((child_node, curr[1] + 1))
+
             ## Sort Queue based on our Heuristic
             nodes = sorted(nodes, key=algorithm)
+
+            ## If we have more nodes than our previous maximum in our queue, record new max
             if max_nodes_in_queue <= len(nodes):
                 max_nodes_in_queue = len(nodes)
 
 
+## Helper function to get the child state given preset operators
 def get_child(state, dir):
     for i in range(0, len(state)):
         for j in range(0, len(state)):
             if state[i][j] == 0:
-                child = copy.deepcopy(state)
-                if dir == 0:  ## Move Blank Up
-                    try:
+                child = copy.deepcopy(state)  ## so we don't continuously modify the original node causing an infinite loop
+                try:
+                    if dir == 0 and i != 0:  ## Move Blank Up
                         temp_val = child[i - 1][j]
                         child[i - 1][j] = child[i][j]
                         child[i][j] = temp_val
                         return child
-                    except IndexError:
-                        return None
-                elif dir == 1:  ## Move Blank Down
-                    try:
+                    elif dir == 1 and i != 2:  ## Move Blank Down
                         temp_val = child[i + 1][j]
                         child[i + 1][j] = child[i][j]
                         child[i][j] = temp_val
                         return child
-                    except IndexError:
-                        return None
-                elif dir == 2:  ## Move Blank Left
-                    try:
+                    elif dir == 2 and j != 0:  ## Move Blank Left
                         temp_val = child[i][j - 1]
                         child[i][j - 1] = child[i][j]
                         child[i][j] = temp_val
                         return child
-                    except IndexError:
-                        return None
-                elif dir == 3:
-                    try:
+                    elif dir == 3 and j != 2:  ## Move Blank Right
                         temp_val = child[i][j + 1]
                         child[i][j + 1] = child[i][j]
                         child[i][j] = temp_val
                         return child
-                    except IndexError:
+                    else:
                         return None
-                else:
+                except IndexError:  ## Index errors will occur if we try and move the blank outside of the array, therefore we return no valid node
                     return None
 
 
+## Helper function to generate puzzle
+## Parameters: string p_mode
+## Output: if p_mode equals "Y", prompt user to generate own puzzle, else prompt them to choose desired default puzzle by difficulty.
 def gen_puzzle(p_mode="N"):
     puzzle = []
     if p_mode == "Y":
@@ -90,25 +106,33 @@ def gen_puzzle(p_mode="N"):
         for i in range(0, 9):
             puzzle[int(i / 3)][i % 3] = int(input("%s\n%s\n%s\nNumber? " % (puzzle[0], puzzle[1], puzzle[2])))
     else:
-        p_difficulty = int(input("Please enter your desired default puzzle difficulty level! \n 0 - Trivial \n 1 - Easy \n 2 - Medium \n 3 - Hard \n 4 - Impossible \n"))
-
+        p_difficulty = int(input("Please enter your desired default puzzle difficulty level! \n 0 - Trivial through 7 - Very Difficult \n"))
+        ## examples taken from Dr. Keogh's lecture slides
         if p_difficulty == 0:
             puzzle = [[1, 2, 3], [4, 5, 6], [7, 8, 0]]
         elif p_difficulty == 1:
-            puzzle = [[1, 2, 3], [4, 5, 6], [7, 0, 8]]
+            puzzle = [[1, 2, 3], [4, 5, 6], [0, 7, 8]]
         elif p_difficulty == 2:
             puzzle = [[1, 2, 3], [5, 0, 6], [4, 7, 8]]
         elif p_difficulty == 3:
-            puzzle = [[5, 1, 2], [6, 7, 3], [4, 0, 8]]
-        else:
-            puzzle = [[5, 0, 2], [6, 1, 7], [4, 8, 3]]
+            puzzle = [[1, 3, 6], [5, 0, 2], [4, 7, 8]]
+        elif p_difficulty == 4:
+            puzzle = [[1, 3, 6], [5, 0, 7], [4, 8, 2]]
+        elif p_difficulty == 5:
+            puzzle = [[1, 6, 7], [5, 0, 3], [4, 8, 2]]
+        elif p_difficulty == 6:
+            puzzle = [[7, 1, 2], [4, 8, 5], [6, 3, 0]]
+        elif p_difficulty == 7:
+            puzzle = [[0, 7, 2], [4, 6, 1], [3, 5, 8]]
 
     display_puzzle(puzzle)
     return puzzle
 
 
-## Helper function for selecting algorithm
-def select_algorithm(goal):
+## Helper function for selecting queuing function (the heuristic)
+## Parameters: goal state
+## Output: Lambda expression for calculating heuristic based on inputted state.
+def select_queuing_function(goal):
     algo = int(input("Select a search heuristic: 0 - Uniform Cost \n 1 - Misplaced Tile \n 2 - Manhattan Distance\n"))
     if algo == 0:
         return lambda i: i[1]
@@ -158,6 +182,8 @@ def get_misplaced_tiles(state, goal):
     return count
 
 
+## Helper function to display puzzle
+## Output: Displays 3 by 3 matrix
 def display_puzzle(puzzle):
     print("%s\n%s\n%s" % (puzzle[0], puzzle[1], puzzle[2]))
 
